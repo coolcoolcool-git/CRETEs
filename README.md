@@ -1,2 +1,0 @@
-# CRETEs
-CRETEs Randomizer
