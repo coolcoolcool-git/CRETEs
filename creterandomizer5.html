@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CRETEs RANDOMIZER</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: 2rem auto;
+      text-align: center;
+    }
+    button, input[type="text"], input[type="password"] {
+      padding: 0.5em 1em;
+      font-size: 1.1em;
+      margin-bottom: 1em;
+    }
+    #results-table {
+      margin: 1.5em auto;
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 1300px;
+    }
+    #results-table td {
+      border: none;
+      padding: 1em;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .rarity-img {
+      width: 150px;
+      height: 150px;
+      object-fit: contain;
+      border-radius: 18px;
+      border: 2px solid #ccc;
+      background: #f6f6f6;
+      display: block;
+      margin: 0 auto 0.7em auto;
+    }
+    .rarity-label {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-top: 0.3em;
+      text-transform: capitalize;
+      letter-spacing: 1px;
+    }
+    .rarity-blank { color: #000; }
+    .rarity-common { color: #1976d2; }
+    .rarity-uncommon { color: #388e3c; }
+    .rarity-rare { color: #d32f2f; }
+    .rarity-mythical { color: #aaa; }
+    .rarity-legendary { color: #ffd700; }
+    .rates {
+      margin-top: 2em;
+      font-size: 0.95em;
+      color: #555;
+    }
+    .pull-items {
+      margin-top: 2em;
+      padding: 1em;
+      border: 1px solid #ccc;
+      background: #eef;
+      border-radius: 8px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    .pull-items h2 {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+    .rarity-group {
+      margin-bottom: 1.5em;
+    }
+    .rarity-group h3 {
+      text-transform: capitalize;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.3em;
+      margin-bottom: 0.8em;
+    }
+    .items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .item {
+      text-align: center;
+      width: 150px;
+    }
+    .pull-items .item img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+    /* History section w/ two tables, left-aligned */
+    .history-section {
+      margin-top: 2em;
+      padding: 1em;
+      border: 1px solid #ccc;
+      background: #f7f7f7;
+      border-radius: 8px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    .history-section h2 {
+      margin-bottom: 0.5em;
+      text-align: left;
+    }
+    .history-tables-container {
+      display: flex;
+      justify-content: flex-start;
+      gap: 10px;
+      margin-top: 1em;
+    }
+    .history-table {
+      width: 49%;
+      background: #fff;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 0.97em;
+    }
+    .history-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .history-table th, .history-table td {
+      border: 1px solid #ddd;
+      padding: 0.2em;
+      text-align: center;
+    }
+    .history-table th {
+      background: #f0f0f0;
+      font-weight: bold;
+      font-size: 1em;
+    }
+    /* Clickable block for each history pull */
+    .history-pull-block {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      background: #fefefe;
+      border-radius: 8px;
+      border: 2px solid #eee;
+      padding: 6px 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: box-shadow 0.2s;
+      text-align: left;
+      position: relative;
+    }
+    .history-pull-block:hover {
+      box-shadow: 0 0 6px #aaa;
+      background: #f6f6ff;
+    }
+    .history-block-label {
+      font-weight: bold;
+      font-size: 1.01em;
+      margin-right: 8px;
+      min-width: 80px;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .history-block-time {
+      font-size: 0.97em;
+      color: #888;
+      margin-right: 8px;
+      min-width: 70px;
+    }
+    .history-block-images {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .history-block-images img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+    .name-input-label, .code-input-label {
+      font-size: 1.1em;
+      margin-right: 0.5em;
+      vertical-align: middle;
+    }
+    .scan-btn {
+      display: inline-block;
+      font-size: 0.95em;
+      padding: 0.5em 1em;
+      margin-bottom: 1em;
+      margin-left: 1em;
+      background: #eef;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #qr-reader {
+      margin: 1em 0;
+      display: none;
+    }
+    .error-msg {
+      color: #d32f2f;
+      font-size: 1em;
+      margin-bottom: 1em;
+      display: none;
+    }
+  </style>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+  <h1>CRETEs RANDOMIZER</h1>
+  <label for="nameInput" class="name-input-label">Name:</label>
+  <input type="text" id="nameInput" placeholder="Enter your name">
+  <br>
+  <label for="codeInput" class="code-input-label">Access Code:</label>
+  <input type="password" id="codeInput" placeholder="Type code to unlock">
+  <button class="scan-btn" id="scanQrBtn">Scan QR (mobile)</button>
+  <div id="qr-reader"></div>
+  <div class="error-msg" id="errorMsg"></div>
+  <button id="pullBtn" disabled>DRAW</button>
+  <table id="results-table">
+    <tbody id="results"></tbody>
+  </table>
+
+  <div class="rates">
+    <strong>Rates:</strong> Blank: 50%, Common: 23.99%, Uncommon: 15%, Rare: 10%, Mythical: 1%, Legendary: 0.01%
+  </div>
+  
+  <div class="pull-items" id="pullItems">
+    <h2>Available Items</h2>
+  </div>
+
+  <div class="history-section" id="pullHistorySection">
+    <h2>Pull History</h2>
+    <button id="clearHistoryBtn">Clear History</button>
+    <div class="history-tables-container">
+      <div class="history-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Saved Pulls</th>
+            </tr>
+          </thead>
+          <tbody id="historyList1"></tbody>
+        </table>
+      </div>
+      <div class="history-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Saved Pulls</th>
+            </tr>
+          </thead>
+          <tbody id="historyList2"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const ACCESS_CODE = "crete2025";
+
+    const rarityImages = {
+      blank:    ["b1.png"],
+      common:   ["c1.png", "c2.png", "c3.png", "c4.png", "c5.png", "c6.png", "c7.png", "c8.png", "c9.png", "c10.png", "c11.png", "c12.png"],
+      uncommon: ["uc1.png", "uc2.png", "uc3.png", "uc4.png", "uc5.png", "uc6.png", "uc7.png"],
+      rare:     ["r1.png", "r2.png", "r3.png", "r3.png"],
+      mythical: ["m1.png", "m2.png", "m3.png"],
+      legendary:["l1.png", "l2.png", "l3.png"]
+    };
+
+    const rates = {
+      blank: 50,
+      common: 23.99,
+      uncommon: 15,
+      rare: 10,
+      mythical: 1,
+      legendary: 0.01
+    };
+
+    let historyTableIndex = -1;
+
+    function loadHistory() {
+      let history = localStorage.getItem("pullHistory");
+      if (history) {
+        try {
+          history = JSON.parse(history);
+          document.getElementById('historyList1').innerHTML = "";
+          document.getElementById('historyList2').innerHTML = "";
+          history.forEach((entry, idx) => {
+            addHistoryBlock(entry, idx % 2, false);
+          });
+          historyTableIndex = (history.length - 1) % 2;
+        } catch (e) {
+          localStorage.removeItem("pullHistory");
+        }
+      }
+    }
+
+    function saveHistoryEntry(entry) {
+      let history = localStorage.getItem("pullHistory");
+      history = history ? JSON.parse(history) : [];
+      history.push(entry);
+      localStorage.setItem("pullHistory", JSON.stringify(history));
+    }
+
+    function pickRarityFrom(rarityList) {
+      let total = 0;
+      let localRates = [];
+      for (const r of rarityList) {
+        total += rates[r];
+        localRates.push({ name: r, rate: rates[r] });
+      }
+      const rand = Math.random() * total;
+      let cumulative = 0;
+      for (const rarity of localRates) {
+        cumulative += rarity.rate;
+        if (rand < cumulative) return rarity.name;
+      }
+      return localRates[localRates.length - 1].name;
+    }
+
+    function pickImage(rarity) {
+      const imgs = rarityImages[rarity];
+      if (!imgs || imgs.length === 0) return "";
+      const idx = Math.floor(Math.random() * imgs.length);
+      return imgs[idx];
+    }
+
+    function getRarityClass(rarity) {
+      return "rarity-label rarity-" + rarity;
+    }
+
+    function checkAccessCode() {
+      const codeVal = document.getElementById('codeInput').value.trim();
+      const pullBtn = document.getElementById('pullBtn');
+      if (codeVal === ACCESS_CODE) {
+        pullBtn.disabled = false;
+        document.getElementById('errorMsg').style.display = "none";
+      } else {
+        pullBtn.disabled = true;
+      }
+    }
+    document.getElementById('codeInput').addEventListener('input', checkAccessCode);
+
+    document.getElementById('pullBtn').onclick = function() {
+      const codeVal = document.getElementById('codeInput').value.trim();
+      if (codeVal !== ACCESS_CODE) {
+        document.getElementById('errorMsg').textContent = "Invalid access code!";
+        document.getElementById('errorMsg').style.display = "block";
+        return;
+      }
+      document.getElementById('errorMsg').style.display = "none";
+      const resultsBody = document.getElementById('results');
+      resultsBody.innerHTML = "";
+
+      const nameVal = document.getElementById('nameInput').value.trim() || "(No Name)";
+
+      const pulls = [];
+      let blankCount = 0;
+      for (let i = 0; i < 3; i++) {
+        let rarityPool = ["blank", "common", "uncommon", "rare"];
+        if (blankCount >= 2) {
+          rarityPool = ["common", "uncommon", "rare"];
+        }
+        let rarity = pickRarityFrom(rarityPool);
+        if (rarity === "blank") blankCount++;
+        pulls.push(rarity);
+      }
+      let rarityPool4 = ["blank", "common", "uncommon", "rare", "mythical"];
+      if (blankCount >= 2) {
+        rarityPool4 = ["common", "uncommon", "rare", "mythical"];
+      }
+      let rarity4 = pickRarityFrom(rarityPool4);
+      if (rarity4 === "blank") blankCount++;
+      pulls.push(rarity4);
+
+      let rarityPool5 = ["blank", "common", "uncommon", "rare", "mythical", "legendary"];
+      if (blankCount >= 2) {
+        rarityPool5 = ["common", "uncommon", "rare", "mythical", "legendary"];
+      }
+      let rarity5 = pickRarityFrom(rarityPool5);
+      pulls.push(rarity5);
+
+      const row = document.createElement('tr');
+      pulls.forEach(rarity => {
+        const cell = document.createElement('td');
+        const img = document.createElement('img');
+        img.src = pickImage(rarity);
+        img.alt = rarity;
+        img.className = "rarity-img";
+        cell.appendChild(img);
+        const label = document.createElement('div');
+        label.className = getRarityClass(rarity);
+        label.textContent = rarity;
+        cell.appendChild(label);
+        row.appendChild(cell);
+      });
+      resultsBody.appendChild(row);
+
+      historyTableIndex = (historyTableIndex + 1) % 2;
+
+      // Prepare info for saving and rendering
+      const timeStr = new Date().toLocaleTimeString();
+      const pullsForSave = pulls.map(rarity => ({
+        rarity: rarity,
+        img: pickImage(rarity)
+      }));
+
+      const entry = {
+        name: nameVal,
+        time: timeStr,
+        pulls: pullsForSave
+      };
+
+      addHistoryBlock(entry, historyTableIndex, true);
+      saveHistoryEntry(entry);
+    };
+
+    // Adds a clickable history block (as tr > td) to the right table and sets up right-click saving
+    function addHistoryBlock(entry, tableIdx, scrollToView) {
+      const tableIds = ["historyList1", "historyList2"];
+      const historyList = document.getElementById(tableIds[tableIdx]);
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+
+      // Create the block as a .history-pull-block div
+      const blockDiv = document.createElement('div');
+      blockDiv.className = "history-pull-block";
+      blockDiv.title = "Right-click and 'Save Image As...' to save this pull as an image";
+
+      // Add name
+      const nameDiv = document.createElement('span');
+      nameDiv.className = "history-block-label";
+      nameDiv.textContent = entry.name;
+      blockDiv.appendChild(nameDiv);
+
+      // Add time
+      const timeDiv = document.createElement('span');
+      timeDiv.className = "history-block-time";
+      timeDiv.textContent = entry.time;
+      blockDiv.appendChild(timeDiv);
+
+      // Images row
+      const imagesDiv = document.createElement('span');
+      imagesDiv.className = "history-block-images";
+      entry.pulls.forEach(item => {
+        const img = document.createElement('img');
+        img.src = item.img;
+        img.alt = item.rarity;
+        imagesDiv.appendChild(img);
+      });
+      blockDiv.appendChild(imagesDiv);
+
+      // Make the block downloadable as image via right-click/save as
+      blockDiv.oncontextmenu = function(e) {
+        e.preventDefault();
+        // Render to a canvas and trigger save
+        const canvas = document.createElement('canvas');
+        const width = 420;
+        const height = 64;
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fefefe";
+        ctx.fillRect(0, 0, width, height);
+        ctx.font = "bold 19px sans-serif";
+        ctx.fillStyle = "#333";
+        ctx.fillText(entry.name, 12, 26);
+        ctx.font = "16px sans-serif";
+        ctx.fillStyle = "#888";
+        ctx.fillText(entry.time, 12, 48);
+
+        // Draw images
+        let imgX = 130;
+        const imgSize = 38;
+        let loadedCount = 0;
+        const totalImgs = entry.pulls.length;
+        const imgs = [];
+        entry.pulls.forEach((item, idx) => {
+          const img = new window.Image();
+          img.crossOrigin = "Anonymous";
+          img.src = item.img;
+          img.onload = function() {
+            imgs[idx] = img;
+            loadedCount++;
+            if (loadedCount === totalImgs) {
+              imgs.forEach((im, i) => {
+                ctx.drawImage(im, imgX + i*imgSize, 12, imgSize, imgSize);
+              });
+              // Trigger download
+              const link = document.createElement('a');
+              link.download = `${entry.name.replace(/\s+/g,"_")}_${entry.time.replace(/:/g,"-")}_pull.png`;
+              link.href = canvas.toDataURL();
+              document.body.appendChild(link);
+              link.click();
+              setTimeout(() => document.body.removeChild(link), 100);
+            }
+          };
+        });
+        return false;
+      };
+
+      td.appendChild(blockDiv);
+      tr.appendChild(td);
+      historyList.appendChild(tr);
+      if(scrollToView) {
+        blockDiv.scrollIntoView({behavior: "smooth", block: "center"});
+      }
+    }
+
+    document.getElementById('clearHistoryBtn').onclick = function() {
+      document.getElementById('historyList1').innerHTML = "";
+      document.getElementById('historyList2').innerHTML = "";
+      historyTableIndex = -1;
+      localStorage.removeItem("pullHistory");
+    };
+
+    function generateGallery() {
+      const galleryContainer = document.getElementById('pullItems');
+      galleryContainer.innerHTML = "<h2>Available Items</h2>";
+      const rarityOrder = ["blank", "common", "uncommon", "rare", "mythical", "legendary"];
+
+      rarityOrder.forEach(rarity => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = "rarity-group";
+        const heading = document.createElement('h3');
+        heading.textContent = rarity;
+        heading.className = getRarityClass(rarity);
+        groupDiv.appendChild(heading);
+
+        const itemsDiv = document.createElement('div');
+        itemsDiv.className = "items";
+        rarityImages[rarity].forEach(imgSrc => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = "item";
+          const img = document.createElement('img');
+          img.src = imgSrc;
+          img.alt = rarity;
+          itemDiv.appendChild(img);
+          itemsDiv.appendChild(itemDiv);
+        });
+
+        groupDiv.appendChild(itemsDiv);
+        galleryContainer.appendChild(groupDiv);
+      });
+    }
+
+    window.onload = function() {
+      generateGallery();
+      loadHistory();
+    };
+
+    let html5QrCode;
+    document.getElementById('scanQrBtn').onclick = function() {
+      const qrReader = document.getElementById('qr-reader');
+      qrReader.style.display = "block";
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => startQrReading());
+      } else {
+        startQrReading();
+      }
+    };
+    function startQrReading() {
+      const qrReader = document.getElementById('qr-reader');
+      html5QrCode = new Html5Qrcode("qr-reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: 200
+        },
+        qrCodeMessage => {
+          document.getElementById('codeInput').value = qrCodeMessage;
+          checkAccessCode();
+          html5QrCode.stop();
+          qrReader.style.display = "none";
+        },
+        errorMessage => {}
+      ).catch(err => {
+        document.getElementById('errorMsg').textContent = "QR Scan failed: " + err;
+        document.getElementById('errorMsg').style.display = "block";
+      });
+    }
+  </script>
+</body>
+</html>
