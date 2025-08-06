@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CRETEs RANDOMIZER</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: 2rem auto;
+      text-align: center;
+    }
+    button {
+      padding: 0.5em 1em;
+      font-size: 1.1em;
+      margin-bottom: 1em;
+    }
+    #results-table {
+      margin: 1.5em auto;
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 1300px;
+    }
+    #results-table td {
+      border: none;
+      padding: 1em;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .rarity-img {
+      width: 150px;
+      height: 150px;
+      object-fit: contain;
+      border-radius: 18px;
+      border: 2px solid #ccc;
+      background: #f6f6f6;
+      display: block;
+      margin: 0 auto 0.7em auto;
+    }
+    .rarity-label {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-top: 0.3em;
+      text-transform: capitalize;
+      letter-spacing: 1px;
+    }
+    .rarity-blank { color: #000; }
+    .rarity-common { color: #1976d2; }
+    .rarity-uncommon { color: #388e3c; }
+    .rarity-rare { color: #d32f2f; }
+    .rarity-mythical { color: #aaa; }
+    .rarity-legendary { color: #ffd700; }
+    .rates {
+      margin-top: 2em;
+      font-size: 0.95em;
+      color: #555;
+    }
+    /* Styles for the available items gallery */
+    .pull-items {
+      margin-top: 2em;
+      padding: 1em;
+      border: 1px solid #ccc;
+      background: #eef;
+      border-radius: 8px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    .pull-items h2 {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+    .rarity-group {
+      margin-bottom: 1.5em;
+    }
+    .rarity-group h3 {
+      text-transform: capitalize;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.3em;
+      margin-bottom: 0.8em;
+    }
+    .items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .item {
+      text-align: center;
+      width: 150px;
+    }
+    /* Override available items images to be at least 90px */
+    .pull-items .item img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+    /* Styles for history section */
+    .history-section {
+      margin-top: 2em;
+      padding: 1em;
+      border: 1px solid #ccc;
+      background: #f7f7f7;
+      border-radius: 8px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .history-section h2 {
+      margin-bottom: 0.5em;
+    }
+    .history-section table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .history-section td {
+      border: 1px solid #ddd;
+      padding: 0.5em;
+      text-align: center;
+    }
+    /* Override history images to be 60px */
+    .history-section img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      border-radius: 50%;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>CRETEs RANDOMIZER</h1>
+  <button id="pullBtn">DRAW</button>
+  <table id="results-table">
+    <tbody id="results"></tbody>
+  </table>
+
+  <div class="rates">
+    <strong>Rates:</strong> Blank: 50%, Common: 23.99%, Uncommon: 15%, Rare: 10%, Mythical: 1%, Legendary: 0.01%
+  </div>
+  
+  <!-- Available Items Gallery -->
+  <div class="pull-items" id="pullItems">
+    <h2>Available Items</h2>
+    <!-- Gallery content will be generated here -->
+  </div>
+
+  <!-- History Section with clear button -->
+  <div class="history-section" id="pullHistorySection">
+    <h2>Pull History</h2>
+    <button id="clearHistoryBtn">Clear History</button>
+    <table id="pullHistoryTable">
+      <tbody id="historyList"></tbody>
+    </table>
+  </div>
+  
+  <script>
+    const rarityImages = {
+      blank:    ["b1.png"],
+      common:   ["c1.png", "c2.png", "c3.png", "c4.png", "c5.png", "c6.png", "c7.png", "c8.png", "c9.png", "c10.png", "c11.png", "c12.png"],
+      uncommon: ["uc1.png", "uc2.png", "uc3.png", "uc4.png", "uc5.png", "uc6.png", "uc7.png"],
+      rare:     ["r1.png", "r2.png", "r3.png", "r3.png"],
+      mythical: ["m1.png", "m2.png", "m3.png"],
+      legendary:["l1.png", "l2.png", "l3.png"]
+    };
+
+    // Updated rates
+    const rates = {
+      blank: 50,
+      common: 23.99,
+      uncommon: 15,
+      rare: 10,
+      mythical: 1,
+      legendary: 0.01
+    };
+
+    function pickRarityFrom(rarityList) {
+      let total = 0;
+      let localRates = [];
+      for (const r of rarityList) {
+        total += rates[r];
+        localRates.push({ name: r, rate: rates[r] });
+      }
+      const rand = Math.random() * total;
+      let cumulative = 0;
+      for (const rarity of localRates) {
+        cumulative += rarity.rate;
+        if (rand < cumulative) return rarity.name;
+      }
+      return localRates[localRates.length - 1].name;
+    }
+
+    function pickImage(rarity) {
+      const imgs = rarityImages[rarity];
+      if (!imgs || imgs.length === 0) return "";
+      const idx = Math.floor(Math.random() * imgs.length);
+      return imgs[idx];
+    }
+
+    function getRarityClass(rarity) {
+      return "rarity-label rarity-" + rarity;
+    }
+
+    // Draw pulls with rarity labels below each image (for main display).
+    document.getElementById('pullBtn').onclick = function() {
+      const resultsBody = document.getElementById('results');
+      resultsBody.innerHTML = ""; // Clear previous results in main table
+
+      const pulls = [];
+      let blankCount = 0;
+
+      // Pulls 1–3: random among blank, common, uncommon, rare
+      for (let i = 0; i < 3; i++) {
+        let rarityPool = ["blank", "common", "uncommon", "rare"];
+        if (blankCount >= 2) {
+          rarityPool = ["common", "uncommon", "rare"];
+        }
+        let rarity = pickRarityFrom(rarityPool);
+        if (rarity === "blank") blankCount++;
+        pulls.push(rarity);
+      }
+
+      // Pull 4: random among blank, common, uncommon, rare, mythical
+      let rarityPool4 = ["blank", "common", "uncommon", "rare", "mythical"];
+      if (blankCount >= 2) {
+        rarityPool4 = ["common", "uncommon", "rare", "mythical"];
+      }
+      let rarity4 = pickRarityFrom(rarityPool4);
+      if (rarity4 === "blank") blankCount++;
+      pulls.push(rarity4);
+
+      // Pull 5: random among all rarities
+      let rarityPool5 = ["blank", "common", "uncommon", "rare", "mythical", "legendary"];
+      if (blankCount >= 2) {
+        rarityPool5 = ["common", "uncommon", "rare", "mythical", "legendary"];
+      }
+      let rarity5 = pickRarityFrom(rarityPool5);
+      pulls.push(rarity5);
+
+      // Create a new row for the current pull result (for main display)
+      const row = document.createElement('tr');
+      pulls.forEach(rarity => {
+        const cell = document.createElement('td');
+        // Image
+        const img = document.createElement('img');
+        img.src = pickImage(rarity);
+        img.alt = rarity;
+        img.className = "rarity-img";
+        cell.appendChild(img);
+        // Rarity label below the image (for main display)
+        const label = document.createElement('div');
+        label.className = getRarityClass(rarity);
+        label.textContent = rarity;
+        cell.appendChild(label);
+        row.appendChild(cell);
+      });
+      resultsBody.appendChild(row);
+
+      // Record the pull in the History section (only images, no rarity names)
+      const historyList = document.getElementById('historyList');
+      // Create a new row for history
+      const historyRow = document.createElement('tr');
+      // Timestamp cell
+      const timeCell = document.createElement('td');
+      timeCell.textContent = new Date().toLocaleTimeString();
+      historyRow.appendChild(timeCell);
+      // For each rarity in the current pull, create a new cell with only the image
+      pulls.forEach(rarity => {
+        const cell = document.createElement('td');
+        const img = document.createElement('img');
+        img.src = pickImage(rarity);
+        img.alt = rarity;
+        cell.appendChild(img);
+        historyRow.appendChild(cell);
+      });
+      historyList.appendChild(historyRow);
+    };
+
+    // Clear History button functionality
+    document.getElementById('clearHistoryBtn').onclick = function() {
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = "";
+    };
+
+    // Generate the gallery of available items grouped by rarity
+    function generateGallery() {
+      const galleryContainer = document.getElementById('pullItems');
+      galleryContainer.innerHTML = "<h2>Available Items</h2>";
+      const rarityOrder = ["blank", "common", "uncommon", "rare", "mythical", "legendary"];
+
+      rarityOrder.forEach(rarity => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = "rarity-group";
+        
+        // Group header with rarity color styling
+        const heading = document.createElement('h3');
+        heading.textContent = rarity;
+        heading.className = getRarityClass(rarity);
+        groupDiv.appendChild(heading);
+
+        const itemsDiv = document.createElement('div');
+        itemsDiv.className = "items";
+
+        rarityImages[rarity].forEach(imgSrc => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = "item";
+          
+          const img = document.createElement('img');
+          img.src = imgSrc;
+          img.alt = rarity;
+          itemDiv.appendChild(img);
+          
+          itemsDiv.appendChild(itemDiv);
+        });
+
+        groupDiv.appendChild(itemsDiv);
+        galleryContainer.appendChild(groupDiv);
+      });
+    }
+
+    window.onload = generateGallery;
+  </script>
+</body>
+</html>
