@@ -31,11 +31,11 @@
       width: 150px;
       height: 150px;
       object-fit: contain;
-      border-radius: 18px;
       border: 2px solid #ccc;
       background: #f6f6f6;
       display: block;
       margin: 0 auto 0.7em auto;
+      border-radius: 0;
     }
     .rarity-label {
       font-size: 1.2em;
@@ -92,9 +92,9 @@
       width: 90px;
       height: 90px;
       object-fit: contain;
-      border-radius: 8px;
       border: 1px solid #ccc;
       background: #fff;
+      border-radius: 0;
     }
     /* History section w/ two tables, left-aligned */
     .history-section {
@@ -146,7 +146,7 @@
       justify-content: flex-start;
       gap: 8px;
       background: #fefefe;
-      border-radius: 8px;
+      border-radius: 0;
       border: 2px solid #eee;
       padding: 6px 8px;
       cursor: pointer;
@@ -184,9 +184,9 @@
       width: 38px;
       height: 38px;
       object-fit: contain;
-      border-radius: 8px;
       border: 1px solid #ccc;
       background: #fff;
+      border-radius: 0;
     }
     .name-input-label, .code-input-label {
       font-size: 1.1em;
@@ -213,6 +213,63 @@
       font-size: 1em;
       margin-bottom: 1em;
       display: none;
+    }
+    /* Modal styles */
+    .modal-bg {
+      position: fixed;
+      z-index: 10000;
+      left: 0; top: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.32);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 0;
+      border: 2px solid #888;
+      padding: 28px 20px 20px 20px;
+      box-shadow: 0 0 24px #444;
+      max-width: 90vw;
+      max-height: 90vh;
+      position: relative;
+      text-align: center;
+    }
+    .modal-close-btn {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      font-size: 1.3em;
+      background: #eee;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      padding: 4px 12px;
+    }
+    .modal-img-preview {
+      display: block;
+      margin: 0 auto 12px auto;
+      border: 2px solid #aaa;
+      border-radius: 0;
+      background: #f8f8f8;
+      max-width: 95vw;
+      height: auto;
+      max-height: 62vh;
+    }
+    .modal-download-btn {
+      display: inline-block;
+      margin: 8px auto 0 auto;
+      padding: 8px 22px;
+      font-size: 1.05em;
+      border: 1px solid #1976d2;
+      background: #f0f0ff;
+      color: #1976d2;
+      border-radius: 0;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .modal-content { padding: 10px; }
+      .modal-img-preview { max-width: 98vw; max-height: 50vh; }
     }
   </style>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -266,7 +323,8 @@
       </div>
     </div>
   </div>
-  
+  <!-- Modal root -->
+  <div id="modalRoot"></div>
   <script>
     const ACCESS_CODE = "crete2025";
 
@@ -410,7 +468,6 @@
 
       historyTableIndex = (historyTableIndex + 1) % 2;
 
-      // Prepare info for saving and rendering
       const timeStr = new Date().toLocaleTimeString();
       const pullsForSave = pulls.map(rarity => ({
         rarity: rarity,
@@ -423,21 +480,102 @@
         pulls: pullsForSave
       };
 
-      addHistoryBlock(entry, historyTableIndex, true);
+      addHistoryBlock(entry, historyTableIndex, false);
       saveHistoryEntry(entry);
     };
 
-    // Adds a clickable history block (as tr > td) to the right table and sets up right-click saving
+    // Modal for enlarged pull image
+    function showPullModal(entry) {
+      // Render to canvas
+      const canvas = document.createElement('canvas');
+      const width = 650;
+      const height = 140;
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.font = "bold 29px sans-serif";
+      ctx.fillStyle = "#333";
+      ctx.fillText(entry.name, 22, 45);
+      ctx.font = "21px sans-serif";
+      ctx.fillStyle = "#888";
+      ctx.fillText(entry.time, 22, 88);
+
+      // Draw images
+      let imgX = 220;
+      const imgSize = 80;
+      let loadedCount = 0;
+      const totalImgs = entry.pulls.length;
+      const imgs = [];
+      entry.pulls.forEach((item, idx) => {
+        const img = new window.Image();
+        img.crossOrigin = "Anonymous";
+        img.src = item.img;
+        img.onload = function() {
+          imgs[idx] = img;
+          loadedCount++;
+          if (loadedCount === totalImgs) {
+            imgs.forEach((im, i) => {
+              ctx.drawImage(im, imgX + i*imgSize, 22, imgSize, imgSize);
+            });
+            // Show modal
+            renderModal(canvas.toDataURL(), entry);
+          }
+        };
+      });
+    }
+
+    function renderModal(dataUrl, entry) {
+      const modalRoot = document.getElementById("modalRoot");
+      modalRoot.innerHTML = "";
+      const modalBg = document.createElement("div");
+      modalBg.className = "modal-bg";
+      const modalContent = document.createElement("div");
+      modalContent.className = "modal-content";
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "modal-close-btn";
+      closeBtn.innerHTML = "×";
+      closeBtn.onclick = () => { modalRoot.innerHTML = ""; };
+      modalContent.appendChild(closeBtn);
+      const img = document.createElement("img");
+      img.src = dataUrl;
+      img.className = "modal-img-preview";
+      img.alt = "Pull preview";
+      modalContent.appendChild(img);
+
+      // Download/save button
+      const saveBtn = document.createElement("button");
+      saveBtn.className = "modal-download-btn";
+      saveBtn.innerText = "Save As Image";
+      saveBtn.onclick = function() {
+        const link = document.createElement('a');
+        link.download = `${entry.name.replace(/\s+/g,"_")}_${entry.time.replace(/:/g,"-")}_pull.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => document.body.removeChild(link), 100);
+      };
+      modalContent.appendChild(saveBtn);
+
+      modalBg.appendChild(modalContent);
+      modalRoot.appendChild(modalBg);
+
+      // Close modal when background clicked
+      modalBg.onclick = function(e) {
+        if (e.target === modalBg) modalRoot.innerHTML = "";
+      };
+    }
+
+    // Adds a clickable history block to the right table
     function addHistoryBlock(entry, tableIdx, scrollToView) {
       const tableIds = ["historyList1", "historyList2"];
       const historyList = document.getElementById(tableIds[tableIdx]);
       const tr = document.createElement('tr');
       const td = document.createElement('td');
-
-      // Create the block as a .history-pull-block div
       const blockDiv = document.createElement('div');
       blockDiv.className = "history-pull-block";
-      blockDiv.title = "Right-click and 'Save Image As...' to save this pull as an image";
+      blockDiv.title = "Click to enlarge and save this pull as an image";
 
       // Add name
       const nameDiv = document.createElement('span');
@@ -462,61 +600,13 @@
       });
       blockDiv.appendChild(imagesDiv);
 
-      // Make the block downloadable as image via right-click/save as
-      blockDiv.oncontextmenu = function(e) {
-        e.preventDefault();
-        // Render to a canvas and trigger save
-        const canvas = document.createElement('canvas');
-        const width = 420;
-        const height = 64;
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#fefefe";
-        ctx.fillRect(0, 0, width, height);
-        ctx.font = "bold 19px sans-serif";
-        ctx.fillStyle = "#333";
-        ctx.fillText(entry.name, 12, 26);
-        ctx.font = "16px sans-serif";
-        ctx.fillStyle = "#888";
-        ctx.fillText(entry.time, 12, 48);
-
-        // Draw images
-        let imgX = 130;
-        const imgSize = 38;
-        let loadedCount = 0;
-        const totalImgs = entry.pulls.length;
-        const imgs = [];
-        entry.pulls.forEach((item, idx) => {
-          const img = new window.Image();
-          img.crossOrigin = "Anonymous";
-          img.src = item.img;
-          img.onload = function() {
-            imgs[idx] = img;
-            loadedCount++;
-            if (loadedCount === totalImgs) {
-              imgs.forEach((im, i) => {
-                ctx.drawImage(im, imgX + i*imgSize, 12, imgSize, imgSize);
-              });
-              // Trigger download
-              const link = document.createElement('a');
-              link.download = `${entry.name.replace(/\s+/g,"_")}_${entry.time.replace(/:/g,"-")}_pull.png`;
-              link.href = canvas.toDataURL();
-              document.body.appendChild(link);
-              link.click();
-              setTimeout(() => document.body.removeChild(link), 100);
-            }
-          };
-        });
-        return false;
+      blockDiv.onclick = function(e) {
+        showPullModal(entry);
       };
 
       td.appendChild(blockDiv);
       tr.appendChild(td);
       historyList.appendChild(tr);
-      if(scrollToView) {
-        blockDiv.scrollIntoView({behavior: "smooth", block: "center"});
-      }
     }
 
     document.getElementById('clearHistoryBtn').onclick = function() {
@@ -594,5 +684,4 @@
     }
   </script>
 </body>
-
 </html>
